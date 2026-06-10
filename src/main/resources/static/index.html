@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图书馆管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --dark-color: #1e293b;
+            --light-color: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f5f9;
+            min-height: 100vh;
+        }
+
+        .login-container {
+            max-width: 450px;
+            margin: 100px auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, var(--primary-color), #4f46e5);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .login-body {
+            padding: 30px;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--dark-color);
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            color: white;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+
+        .menu-item {
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .menu-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .menu-item.active {
+            background: rgba(37, 99, 235, 0.2);
+            border-left-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 15px 20px;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+            border-color: #1d4ed8;
+        }
+
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 8px;
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary-color), #4f46e5);
+            color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card.success {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+        }
+
+        .stat-card.warning {
+            background: linear-gradient(135deg, var(--warning-color), #d97706);
+        }
+
+        .stat-card.danger {
+            background: linear-gradient(135deg, var(--danger-color), #dc2626);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .list-group-item {
+            border-left: 4px solid var(--warning-color);
+            margin-bottom: 8px;
+            border-radius: 8px !important;
+        }
+
+        .table-active td {
+            background-color: #f8f9fa !important;
+            font-weight: bold;
+        }
+
+        .badge {
+            font-size: 0.8rem;
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+<!-- 加载动画 -->
+<div class="loading" id="loading">
+    <div class="spinner"></div>
+</div>
+
+<!-- 登录页面 -->
+<div id="login-page">
+    <div class="login-container">
+        <div class="login-header">
+            <h1><i class="bi bi-book"></i> 图书馆管理系统</h1>
+            <p class="mb-0">管理员登录</p>
+        </div>
+        <div class="login-body">
+            <form id="login-form">
+                <div class="mb-3">
+                    <label for="username" class="form-label">用户名</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input type="text" class="form-control" id="username" placeholder="请输入用户名" required>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="password" class="form-label">密码</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <input type="password" class="form-control" id="password" placeholder="请输入密码" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 btn-lg">
+                    <i class="bi bi-box-arrow-in-right"></i> 登录
+                </button>
+            </form>
+            <div id="login-error" class="alert alert-danger mt-3" style="display: none;"></div>
+
+            <div class="mt-4 text-center text-muted">
+                <p class="mb-1">测试账号：</p>
+                <p class="mb-0">card_admin / 123456 (证件管理)</p>
+                <p class="mb-0">edit_admin / 123456 (采编管理)</p>
+                <p class="mb-0">cir_admin / 123456 (流通管理)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 主系统页面 -->
+<div id="main-page" style="display: none;">
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3><i class="bi bi-book"></i> 图书馆管理</h3>
+            <p class="mb-0 text-muted" id="admin-type"></p>
+        </div>
+        <div id="menu-container">
+            <!-- 菜单将根据管理员类型动态生成 -->
+        </div>
+        <div class="menu-item" onclick="logout()" style="position: absolute; bottom: 20px; width: 100%;">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>退出登录</span>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <div class="top-bar">
+            <h4 class="mb-0" id="page-title">图书检索</h4>
+            <div>
+                <span class="me-3">欢迎您，<strong id="admin-name"></strong></span>
+                <span class="text-muted" id="current-time"></span>
+            </div>
+        </div>
+
+        <!-- 图书检索 -->
+        <div id="search-section" class="section active">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-search"></i> 图书检索
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="search-keyword" placeholder="请输入搜索关键词">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="search-type">
+                                <option value="bName">按书名</option>
+                                <option value="author">按作者</option>
+                                <option value="publisher">按出版社</option>
+                                <option value="isbn">按ISBN</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary w-100" onclick="searchBooks()">
+                                <i class="bi bi-search"></i> 搜索
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                            <tr>
+                                <th>ISBN</th>
+                                <th>书名</th>
+                                <th>作者</th>
+                                <th>出版社</th>
+                                <th>出版日期</th>
+                                <th>操作</th>
+                            </tr>
+                            </thead>
+                            <tbody id="books-table-body"></tbody>
+                        </table>
+                    </div>
+                    <div id="search-result" class="alert mt-3" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 借书操作 -->
+        <div id="borrow-section" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-book"></i> 借书操作
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">学生学号</label>
+                            <input type="text" class="form-control" id="borrow-sno" placeholder="例如：S0001">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">图书条形码（多个用逗号分隔）</label>
+                            <input type="text" class="form-control" id="borrow-barcodes" placeholder="例如：97800101,97800201">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" onclick="borrowBooks()">
+                                <i class="bi bi-check"></i> 确认借书
+                            </button>
+                        </div>
+                    </div>
+                    <div id="borrow-result" class="alert" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 还书操作 -->
+        <div id="return-section" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-arrow-return-left"></i> 还书操作
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">图书条形码</label>
+                            <input type="text" class="form-control" id="return-barcode" placeholder="例如：97800102">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-success w-100" onclick="returnBook()">
+                                <i class="bi bi-check"></i> 确认还书
+                            </button>
+                        </div>
+                    </div>
+                    <div id="return-result" class="alert" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 借书证管理 -->
+        <div id="card-section" class="section">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-credit-card"></i> 新办借书证
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">学生学号</label>
+                                <input type="text" class="form-control" id="create-sno" placeholder="例如：S0006">
+                            </div>
+                            <button class="btn btn-primary w-100" onclick="createCard()">
+                                <i class="bi bi-plus"></i> 新办
+                            </button>
+                            <div id="create-result" class="alert mt-3" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-exclamation-triangle"></i> 挂失借书证
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">学生学号</label>
+                                <input type="text" class="form-control" id="lose-sno" placeholder="例如：S0003">
+                            </div>
+                            <button class="btn btn-warning w-100" onclick="loseCard()">
+                                <i class="bi bi-lock"></i> 挂失
+                            </button>
+                            <div id="lose-result" class="alert mt-3" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-arrow-repeat"></i> 补办借书证
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">学生学号</label>
+                                <input type="text" class="form-control" id="reissue-sno" placeholder="例如：S0001">
+                            </div>
+                            <button class="btn btn-success w-100" onclick="reissueCard()">
+                                <i class="bi bi-credit-card"></i> 补办
+                            </button>
+                            <div id="reissue-result" class="alert mt-3" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-trash"></i> 注销借书证
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">学生学号</label>
+                                <input type="text" class="form-control" id="cancel-sno" placeholder="例如：S0004">
+                            </div>
+                            <button class="btn btn-danger w-100" onclick="cancelCard()">
+                                <i class="bi bi-x"></i> 注销
+                            </button>
+                            <div id="cancel-result" class="alert mt-3" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 书籍采编 -->
+        <div id="book-manage-section" class="section">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-book"></i> 新书入库
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">ISBN</label>
+                                <input type="text" class="form-control" id="new-isbn" placeholder="例如：978006">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">书名</label>
+                                <input type="text" class="form-control" id="new-bname" placeholder="例如：Java编程思想">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">作者</label>
+                                <input type="text" class="form-control" id="new-author" placeholder="例如：Bruce Eckel">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">出版社</label>
+                                <input type="text" class="form-control" id="new-publisher" placeholder="例如：机械工业出版社">
+                            </div>
+                            <button class="btn btn-primary w-100" onclick="addBook()">
+                                <i class="bi bi-plus"></i> 添加新书
+                            </button>
+                            <div id="add-book-result" class="alert mt-3" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-files"></i> 添加图书副本
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">图书ISBN</label>
+                                <input type="text" class="form-control" id="copy-isbn" placeholder="例如：978001">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">条形码</label>
+                                <input type="text" class="form-control" id="copy-barcode" placeholder="例如：97800104">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">藏书位置</label>
+                                <input type="text" class="form-control" id="copy-place" placeholder="例如：文学类A区05柜">
+                            </div>
+                            <button class="btn btn-primary w-100" onclick="addBookCopy()">
+                                <i class="bi bi-plus"></i> 添加副本
+                            </button>
+                            <div id="add-copy-result" class="alert mt-3" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-exclamation-triangle"></i> 旧书报废（单个副本）
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">图书条形码</label>
+                                <input type="text" class="form-control" id="scrap-barcode" placeholder="例如：97800101">
+                            </div>
+                            <button class="btn btn-warning w-100" onclick="scrapBookCopy()">
+                                <i class="bi bi-trash"></i> 报废
+                            </button>
+                            <div id="scrap-result" class="alert mt-3" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-x-circle"></i> 图书下架（所有副本）
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">图书ISBN</label>
+                                <input type="text" class="form-control" id="takedown-isbn" placeholder="例如：978001">
+                            </div>
+                            <button class="btn btn-danger w-100" onclick="takeDownBook()">
+                                <i class="bi bi-x"></i> 下架
+                            </button>
+                            <div id="takedown-result" class="alert mt-3" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 罚款缴纳 -->
+        <div id="fine-section" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-cash"></i> 罚款缴纳
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">学生学号</label>
+                            <input type="text" class="form-control" id="fine-sno" placeholder="例如：S0005">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" onclick="viewFines()">
+                                <i class="bi bi-search"></i> 查询
+                            </button>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-warning w-100" onclick="generateFines()">
+                                <i class="bi bi-gear"></i> 手动生成罚款
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive" id="fines-table-container" style="display: none;">
+                        <table class="table table-hover">
+                            <thead>
+                            <tr>
+                                <th>书名</th>
+                                <th>借书日期</th>
+                                <th>应还日期</th>
+                                <th>实际归还日期</th>
+                                <th>超期天数</th>
+                                <th>罚款金额</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                            </thead>
+                            <tbody id="fines-table-body"></tbody>
+                        </table>
+                    </div>
+                    <div id="fine-total" style="display: none; margin-top: 20px;">
+                        <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">总罚款金额：<span id="total-amount">0</span> 元</h5>
+                            <button class="btn btn-success" onclick="payFines()">
+                                <i class="bi bi-credit-card"></i> 缴纳所有罚款
+                            </button>
+                        </div>
+                    </div>
+                    <div id="fine-result" class="alert mt-3" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 查询统计 -->
+        <div id="statistics-section" class="section">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-person"></i> 个人借阅情况查询
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">学生学号</label>
+                                <input type="text" class="form-control" id="stat-sno" placeholder="例如：S0001">
+                            </div>
+                            <button class="btn btn-primary w-100" onclick="viewPersonalInfo()">
+                                <i class="bi bi-search"></i> 查询
+                            </button>
+                            <div id="personal-info" style="display: none; margin-top: 20px;">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="stat-card">
+                                            <div class="stat-number" id="total-borrowed">0</div>
+                                            <div class="stat-label">总借阅次数</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="stat-card warning">
+                                            <div class="stat-number" id="currently-borrowed">0</div>
+                                            <div class="stat-label">当前未还</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h5 class="mt-3">未还图书：</h5>
+                                <div id="unreturned-books" class="list-group"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-trophy"></i> 当月借书学生排行榜
+                            <button class="btn btn-sm btn-primary float-end" onclick="viewStudentRanking()">
+                                <i class="bi bi-arrow-clockwise"></i> 刷新
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                    <tr>
+                                        <th>排名</th>
+                                        <th>学号</th>
+                                        <th>姓名</th>
+                                        <th>借书次数</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="student-ranking-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 mt-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-star"></i> 当月书籍受欢迎排行榜
+                            <button class="btn btn-sm btn-primary float-end" onclick="viewBookRanking()">
+                                <i class="bi bi-arrow-clockwise"></i> 刷新
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                    <tr>
+                                        <th>排名</th>
+                                        <th>ISBN</th>
+                                        <th>书名</th>
+                                        <th>借阅次数</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="book-ranking-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let currentAdmin = null;
+    const API_BASE = 'http://localhost:8080/api';
+
+    // 页面加载时更新时间
+    setInterval(() => {
+        const timeElement = document.getElementById('current-time');
+        if (timeElement) {
+            timeElement.textContent = new Date().toLocaleString();
+        }
+    }, 1000);
+
+    // 登录表单提交
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+
+        if (!username || !password) {
+            showResult('login-error', '请输入用户名和密码', 'danger');
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/admin/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(text || '用户名或密码错误');
+                });
+            }
+            return response.json();
+        })
+        .then(admin => {
+            hideLoading();
+            currentAdmin = admin;
+            showMainPage();
+        })
+        .catch(error => {
+            hideLoading();
+            showResult('login-error', error.message, 'danger');
+        });
+    });
+
+    // 显示主页面
+    function showMainPage() {
+        document.getElementById('login-page').style.display = 'none';
+        document.getElementById('main-page').style.display = 'block';
+
+        document.getElementById('admin-name').textContent = currentAdmin.username;
+
+        // 根据管理员类型显示对应的菜单
+        generateMenu();
+
+        // 默认显示第一个菜单
+        const firstMenu = document.querySelector('.menu-item[data-section]');
+        if (firstMenu) {
+            firstMenu.click();
+        }
+
+        // 自动加载排行榜
+        viewStudentRanking();
+        viewBookRanking();
+    }
+
+    // 根据管理员类型生成菜单
+    function generateMenu() {
+        const menuContainer = document.getElementById('menu-container');
+        menuContainer.innerHTML = '';
+
+        const allMenus = [
+            { id: 'search', icon: 'bi-search', label: '图书检索', types: [0, 1, 2] },
+            { id: 'borrow', icon: 'bi-book', label: '借书操作', types: [2] },
+            { id: 'return', icon: 'bi-arrow-return-left', label: '还书操作', types: [2] },
+            { id: 'card', icon: 'bi-credit-card', label: '借书证管理', types: [0] },
+            { id: 'book-manage', icon: 'bi-book', label: '书籍采编', types: [1] },
+            { id: 'fine', icon: 'bi-cash', label: '罚款缴纳', types: [2] },
+            { id: 'statistics', icon: 'bi-graph-up', label: '查询统计', types: [0, 1, 2] }
+        ];
+
+        const adminTypeNames = ['证件管理员', '采编管理员', '流通管理员'];
+        const typeElement = document.getElementById('admin-type');
+        if (typeElement) {
+            typeElement.textContent = adminTypeNames[currentAdmin.adminType];
+        }
+
+        allMenus.forEach(menu => {
+            if (menu.types.includes(currentAdmin.adminType)) {
+                const menuItem = document.createElement('div');
+                menuItem.className = 'menu-item';
+                menuItem.dataset.section = menu.id;
+                menuItem.innerHTML = `<i class="bi ${menu.icon}"></i><span>${menu.label}</span>`;
+                menuItem.onclick = () => showSection(menu.id);
+                menuContainer.appendChild(menuItem);
+            }
+        });
+    }
+
+    // 切换页面
+    function showSection(sectionId) {
+        // 隐藏所有section
+        document.querySelectorAll('.section').forEach(section => {
+            section.classList.remove('active');
+        });
+        // 显示选中的section
+        const targetSection = document.getElementById(sectionId + '-section');
+        if (targetSection) {
+            targetSection.classList.add('active');
+        }
+
+        // 更新菜单高亮
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        const activeMenu = document.querySelector(`.menu-item[data-section="${sectionId}"]`);
+        if (activeMenu) {
+            activeMenu.classList.add('active');
+        }
+
+        // 更新页面标题
+        const menuLabel = document.querySelector(`.menu-item[data-section="${sectionId}"] span`);
+        if (menuLabel) {
+            document.getElementById('page-title').textContent = menuLabel.textContent;
+        }
+    }
+
+    // 退出登录
+    function logout() {
+        currentAdmin = null;
+        document.getElementById('main-page').style.display = 'none';
+        document.getElementById('login-page').style.display = 'block';
+        const loginForm = document.getElementById('login-form');
+        if (loginForm) loginForm.reset();
+        const loginError = document.getElementById('login-error');
+        if (loginError) loginError.style.display = 'none';
+    }
+
+    // 图书搜索
+    function searchBooks() {
+        const keyword = document.getElementById('search-keyword').value;
+        const type = document.getElementById('search-type').value;
+
+        showLoading();
+
+        fetch(`${API_BASE}/books/search?keyword=${encodeURIComponent(keyword)}&type=${type}`)
+            .then(response => response.json())
+            .then(books => {
+                hideLoading();
+                const tbody = document.getElementById('books-table-body');
+                tbody.innerHTML = '';
+
+                if (books.length === 0) {
+                    showResult('search-result', '未找到相关图书', 'warning');
+                    return;
+                }
+
+                books.forEach(book => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${book.isbn || '-'}</td>
+                        <td>${book.bName || '-'}</td>
+                        <td>${book.author || '-'}</td>
+                        <td>${book.publisher || '-'}</td>
+                        <td>${book.pubDate ? new Date(book.pubDate).toLocaleDateString() : '-'}</td>
+                        <td><button class="btn btn-sm btn-primary" onclick="viewCopies('${book.isbn}')">查看副本</button></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                showResult('search-result', `找到 ${books.length} 本相关图书`, 'success');
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('搜索失败:', error);
+                showResult('search-result', '搜索失败，请检查服务器是否正常运行', 'danger');
+            });
+    }
+
+    // 查看图书副本
+    function viewCopies(isbn) {
+        showLoading();
+
+        fetch(`${API_BASE}/books/${isbn}/copies`)
+            .then(response => response.json())
+            .then(copies => {
+                hideLoading();
+                let info = '图书副本信息：\n\n';
+                if (copies.length === 0) {
+                    info = '该图书暂无副本';
+                } else {
+                    copies.forEach((copy, index) => {
+                        info += `副本${index + 1}：\n`;
+                        info += `条形码：${copy.barCode || '-'}\n`;
+                        info += `位置：${copy.place || '-'}\n`;
+                        info += `状态：${copy.status || '-'}\n\n`;
+                    });
+                }
+                alert(info);
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('获取副本失败:', error);
+                alert('获取副本信息失败');
+            });
+    }
+
+    // 借书
+    function borrowBooks() {
+        const sno = document.getElementById('borrow-sno').value.trim();
+        const barcodesStr = document.getElementById('borrow-barcodes').value.trim();
+
+        if (!sno || !barcodesStr) {
+            showResult('borrow-result', '请填写完整信息', 'warning');
+            return;
+        }
+
+        const barcodes = barcodesStr.split(',').map(b => b.trim()).filter(b => b);
+
+        if (barcodes.length === 0) {
+            showResult('borrow-result', '请输入有效的图书条形码', 'warning');
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/borrow?sno=${encodeURIComponent(sno)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(barcodes)
+        })
+            .then(response => response.text())
+            .then(result => {
+                hideLoading();
+                showResult('borrow-result', result, result.includes('成功') ? 'success' : 'danger');
+                if (result.includes('成功')) {
+                    document.getElementById('borrow-barcodes').value = '';
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('借书失败:', error);
+                showResult('borrow-result', '借书失败，请检查服务器是否正常运行', 'danger');
+            });
+    }
+
+    // 还书
+    function returnBook() {
+        const barcode = document.getElementById('return-barcode').value.trim();
+
+        if (!barcode) {
+            showResult('return-result', '请输入图书条形码', 'warning');
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/borrow/return/${encodeURIComponent(barcode)}`, {
+            method: 'POST'
+        })
+            .then(response => response.text())
+            .then(result => {
+                hideLoading();
+                showResult('return-result', result, result.includes('成功') ? 'success' : 'danger');
+                if (result.includes('成功')) {
+                    document.getElementById('return-barcode').value = '';
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('还书失败:', error);
+                showResult('return-result', '还书失败，请检查服务器是否正常运行', 'danger');
+            });
+    }
+
+    // 新办借书证
+    function createCard() {
+        const sno = document.getElementById('create-sno').value.trim();
+
+        if (!sno) {
+            showResult('create-result', '请输入学生学号', 'warning');
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/cards/create/${encodeURIComponent(sno)}`, {
+            method: 'POST'
+        })
+            .then(response => response.text())
+            .then(result => {
+                hideLoading();
+                showResult('create-result', result, result.includes('成功') ? 'success' : 'danger');
+                if (result.includes('成功')) {
+                    document.getElementById('create-sno').value = '';
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('新办失败:', error);
+                showResult('create-result', '新办失败，请检查服务器是否正常运行', 'danger');
+            });
+    }
+
+    // 挂失借书证
+    function loseCard() {
+        const sno = document.getElementById('lose-sno').value.trim();
+
+        if (!sno) {
+            showResult('lose-result', '请输入学生学号', 'warning');
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/cards/lose/${encodeURIComponent(sno)}`, {
+            method: 'PUT'
+        })
+            .then(response => response.text())
+            .then(result => {
+                hideLoading();
+                showResult('lose-result', result, result.includes('成功') ? 'success' : 'danger');
+                if (result.includes('成功')) {
+                    document.getElementById('lose-sno').value = '';
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('挂失失败:', error);
+                showResult('lose-result', '挂失失败，请检查服务器是否正常运行', 'danger');
+            });
+    }
+
+    // 补办借书证
+    function reissueCard() {
+        const sno = document.getElementById('reissue-sno').value.trim();
+
+        if (!sno) {
+            showResult('reissue-result', '请输入学生学号', 'warning');
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/cards/reissue/${encodeURIComponent(sno)}`, {
+            method: 'PUT'
+        })
+            .then(response => response.text())
+            .then(result => {
+                hideLoading();
+                showResult('reissue-result', result, result.includes('成功') ? 'success' : 'danger');
+                if (result.includes('成功')) {
+                    document.getElementById('reissue-sno').value = '';
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('补办失败:', error);
+                showResult('reissue-result', '补办失败，请检查服务器是否正常运行', 'danger');
+            });
+    }
+
+    // 注销借书证
+    function cancelCard() {
+        const sno = document.getElementById('cancel-sno').value.trim();
+
+        if (!sno) {
+            showResult('cancel-result', '请输入学生学号', 'warning');
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/cards/cancel/${encodeURIComponent(sno)}`, {
+            method: 'PUT'
+        })
+            .then(response => response.text())
+            .then(result => {
+                hideLoading();
+                showResult('cancel-result', result, result.includes('成功') ? 'success' : 'danger');
+                if (result.includes('成功')) {
+                    document.getElementById('cancel-sno').value = '';
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('注销失败:', error);
+                showResult('cancel-result', '注销失败，请检查服务器是否正常运行', 'danger');
+            });
+    }
+
+    // 添加新书
+    function addBook() {
+        const book = {
+            isbn: document.getElementById('new-isbn').value.trim(),
+            bName: document.getElementById('new-bname').value.trim(),
+            author: document.getElementById('new-author').value.trim(),
+            publisher: document.getElementById('new-publisher').value.trim(),
+            pubDate: new Date().toISOString().split('T')[0]
+        };
+
+        if (!book.isbn || !book.bName || !book.author || !book.publisher) {
+            showResult('add-book-result', '请填写完整信息', 'warning');
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/books`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(book)
+        })
+            .then(response => response.text())
+            .then(result => {
+                hideLoading();
+                showResult('add-book-result', result, result.includes('成功') ? 'success' : 'danger');
+                if (result.includes('成功')) {
+                    document.getElementById('new-isbn').value = '';
+                    document.getElementById('new-bname').value = '';
+                    document.getElementById('new-author').value = '';
+                    document.getElementById('new-publisher').value = '';
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('添加失败:', error);
+                showResult('add-book-result', '添加失败，请检查ISBN是否已存在', 'danger');
+            });
+    }
+
+    // 添加图书副本
+    function addBookCopy() {
+        const copy = {
+            bookISBN: document.getElementById('copy-isbn').value.trim(),
+            barCode: document.getElementById('copy-barcode').value.trim(),
+            place: document.getElementById('copy-place').value.trim(),
+            status: '可借'
+        };
+
+        if (!copy.bookISBN || !copy.barCode || !copy.place) {
+            showResult('add-copy-result', '请填写完整信息', 'warning');
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/books/copies`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(copy)
+        })
+            .then(response => response.text())
+            .then(result => {
+                hideLoading();
+                showResult('add-copy-result', result, result.includes('成功') ? 'success' : 'danger');
+                if (result.includes('成功')) {
+                    document.getElementById('copy-isbn').value = '';
+                    document.getElementById('copy-barcode').value = '';
+                    document.getElementById('copy-place').value = '';
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('添加副本失败:', error);
+                showResult('add-copy-result', '添加失败，请检查ISBN和条形码是否已存在', 'danger');
+            });
+    }
+
+    // 旧书报废
+    function scrapBookCopy() {
+        const barcode = document.getElementById('scrap-barcode').value.trim();
+
+        if (!barcode) {
+            showResult('scrap-result', '请输入图书条形码', 'warning');
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/books/copies/${encodeURIComponent(barcode)}/scrap`, {
+            method: 'PUT'
+        })
+            .then(response => response.text())
+            .then(result => {
+                hideLoading();
+                showResult('scrap-result', result, result.includes('成功') ? 'success' : 'danger');
+                if (result.includes('成功')) {
+                    document.getElementById('scrap-barcode').value = '';
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('报废失败:', error);
+                showResult('scrap-result', '报废失败，请检查服务器是否正常运行', 'danger');
+            });
+    }
+
+    // 图书下架
+    function takeDownBook() {
+        const isbn = document.getElementById('takedown-isbn').value.trim();
+
+        if (!isbn) {
+            showResult('takedown-result', '请输入图书ISBN', 'warning');
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/books/${encodeURIComponent(isbn)}/takedown`, {
+            method: 'PUT'
+        })
+            .then(response => response.text())
+            .then(result => {
+                hideLoading();
+                showResult('takedown-result', result, result.includes('成功') ? 'success' : 'danger');
+                if (result.includes('成功')) {
+                    document.getElementById('takedown-isbn').value = '';
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('下架失败:', error);
+                showResult('takedown-result', '下架失败，请检查服务器是否正常运行', 'danger');
+            });
+    }
+
+    // ==================== 罚款相关函数 ====================
+
+    // 查看罚款明细
+    function viewFines() {
+        const sno = document.getElementById('fine-sno').value.trim();
+
+        if (!sno) {
+            showResult('fine-result', '请输入学生学号', 'warning');
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/fines/${encodeURIComponent(sno)}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('请求失败，状态码：' + response.status);
+                }
+                return response.json();
+            })
+            .then(fines => {
+                hideLoading();
+                const tbody = document.getElementById('fines-table-body');
+                tbody.innerHTML = '';
+
+                if (!fines || fines.length === 0) {
+                    document.getElementById('fines-table-container').style.display = 'none';
+                    document.getElementById('fine-total').style.display = 'none';
+                    showResult('fine-result', '该学生没有未缴罚款', 'success');
+                    return;
+                }
+
+                let totalAmount = 0;
+                fines.forEach(fine => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${fine.bookName || '未知图书'}</td>
+                        <td>${fine.borDate || ''}</td>
+                        <td>${fine.retDate || ''}</td>
+                        <td>${fine.realRetDate || '未归还'}</td>
+                        <td class="text-danger">${fine.overdueDays || 0} 天</td>
+                        <td class="text-danger">¥${(fine.fineAmount || 0).toFixed(2)}</td>
+                        <td>
+                            <span class="badge ${fine.status === '未缴纳' ? 'bg-warning' : 'bg-success'}">
+                                ${fine.status || '未缴纳'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-success" onclick="paySingleFine(${fine.id})">
+                                <i class="bi bi-credit-card"></i> 单笔缴纳
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                    totalAmount += (fine.fineAmount || 0);
+                });
+
+                // 添加合计行
+                const totalRow = document.createElement('tr');
+                totalRow.className = 'table-active';
+                totalRow.innerHTML = `
+                    <td colspan="5" class="text-end fw-bold">合计：</td>
+                    <td class="text-danger fw-bold">¥${totalAmount.toFixed(2)}</td>
+                    <td colspan="2"></td>
+                `;
+                tbody.appendChild(totalRow);
+
+                document.getElementById('fines-table-container').style.display = 'block';
+                document.getElementById('fine-total').style.display = 'block';
+                document.getElementById('total-amount').textContent = totalAmount.toFixed(2);
+                document.getElementById('fine-result').style.display = 'none';
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('查询罚款失败:', error);
+                showResult('fine-result', '查询失败：' + error.message + '，请检查服务器是否正常运行', 'danger');
+            });
+    }
+
+    // 缴纳所有罚款
+    function payFines() {
+        const sno = document.getElementById('fine-sno').value.trim();
+
+        if (!sno) {
+            showResult('fine-result', '请输入学生学号', 'warning');
+            return;
+        }
+
+        if (!confirm('确认缴纳该学生的所有未缴罚款吗？')) {
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/fines/pay/${encodeURIComponent(sno)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+        })
+            .then(response => response.json())
+            .then(result => {
+                hideLoading();
+                if (result.success) {
+                    showResult('fine-result', result.message || '罚款缴纳成功', 'success');
+                    viewFines();
+                } else {
+                    showResult('fine-result', result.message || '缴纳失败', 'danger');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('缴纳罚款失败:', error);
+                showResult('fine-result', '缴纳失败，请检查服务器是否正常运行', 'danger');
+            });
+    }
+
+    // 缴纳单笔罚款
+    function paySingleFine(fineId) {
+        if (!confirm('确认缴纳该笔罚款吗？')) {
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/fines/pay/${fineId}/single`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(result => {
+                hideLoading();
+                if (result.success) {
+                    showResult('fine-result', result.message || '罚款缴纳成功', 'success');
+                    viewFines();
+                } else {
+                    showResult('fine-result', result.message || '缴纳失败', 'danger');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('缴纳罚款失败:', error);
+                showResult('fine-result', '缴纳失败，请检查服务器是否正常运行', 'danger');
+            });
+    }
+
+    // 手动生成罚款记录
+    function generateFines() {
+        const sno = document.getElementById('fine-sno').value.trim();
+
+        if (!sno) {
+            showResult('fine-result', '请输入学生学号', 'warning');
+            return;
+        }
+
+        if (!confirm('确认手动为该学生生成罚款记录吗？')) {
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/fines/generate/${encodeURIComponent(sno)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(result => {
+                hideLoading();
+                if (result.success) {
+                    showResult('fine-result', result.message || '罚款记录生成成功', 'success');
+                    viewFines();
+                } else {
+                    showResult('fine-result', result.message || '生成失败', 'danger');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('生成罚款失败:', error);
+                showResult('fine-result', '生成失败，请检查服务器是否正常运行', 'danger');
+            });
+    }
+
+    // ==================== 个人借阅查询 ====================
+
+    function viewPersonalInfo() {
+        const sno = document.getElementById('stat-sno').value.trim();
+
+        if (!sno) {
+            alert('请输入学生学号');
+            return;
+        }
+
+        showLoading();
+
+        fetch(`${API_BASE}/statistics/personal/${encodeURIComponent(sno)}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('请求失败，状态码：' + response.status);
+                }
+                return response.json();
+            })
+            .then(info => {
+                hideLoading();
+
+                const totalBorrowed = info.totalBorrowed || 0;
+                const currentlyBorrowed = info.currentlyBorrowed || 0;
+                const unreturnedBooks = info.unreturnedBooks || info.currentBorrows || [];
+
+                const totalElement = document.getElementById('total-borrowed');
+                const currentElement = document.getElementById('currently-borrowed');
+                if (totalElement) totalElement.textContent = totalBorrowed;
+                if (currentElement) currentElement.textContent = currentlyBorrowed;
+
+                const unreturnedList = document.getElementById('unreturned-books');
+                if (unreturnedList) {
+                    unreturnedList.innerHTML = '';
+
+                    if (unreturnedBooks.length === 0) {
+                        unreturnedList.innerHTML = '<div class="list-group-item text-muted">暂无未还图书</div>';
+                    } else {
+                        unreturnedBooks.forEach(book => {
+                            const div = document.createElement('div');
+                            div.className = 'list-group-item';
+                            div.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>条形码：${book.barCode || '未知'}</strong><br>
+                                        <small class="text-muted">借书日期：${book.borDate || '未知'}</small><br>
+                                        <small class="text-muted">应还日期：${book.retDate || '未知'}</small>
+                                    </div>
+                                    <span class="badge bg-warning">未归还</span>
+                                </div>
+                            `;
+                            unreturnedList.appendChild(div);
+                        });
+                    }
+                }
+
+                const personalInfo = document.getElementById('personal-info');
+                if (personalInfo) personalInfo.style.display = 'block';
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('查询失败:', error);
+                alert('查询失败：' + error.message + '，请检查服务器是否正常运行');
+            });
+    }
+
+    // ==================== 排行榜 ====================
+
+    function viewStudentRanking() {
+        fetch(`${API_BASE}/statistics/students/ranking`)
+            .then(response => response.json())
+            .then(ranking => {
+                const tbody = document.getElementById('student-ranking-body');
+                if (tbody) {
+                    tbody.innerHTML = '';
+
+                    if (!ranking || ranking.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center">暂无数据</td></tr>';
+                    } else {
+                        ranking.forEach((item, index) => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${index + 1}</td>
+                                <td>${item.sno || '-'}</td>
+                                <td>${item.name || '-'}</td>
+                                <td>${item.borrowCount || 0}</td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('获取学生排行榜失败:', error);
+            });
+    }
+
+    function viewBookRanking() {
+        fetch(`${API_BASE}/statistics/books/ranking`)
+            .then(response => response.json())
+            .then(ranking => {
+                const tbody = document.getElementById('book-ranking-body');
+                if (tbody) {
+                    tbody.innerHTML = '';
+
+                    if (!ranking || ranking.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center">暂无数据</td></tr>';
+                    } else {
+                        ranking.forEach((item, index) => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${index + 1}</td>
+                                <td>${item.isbn || '-'}</td>
+                                <td>${item.name || '-'}</td>
+                                <td>${item.borrowCount || 0}</td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('获取书籍排行榜失败:', error);
+            });
+    }
+
+    // ==================== 工具函数 ====================
+
+    function showResult(elementId, message, type) {
+        const resultElement = document.getElementById(elementId);
+        if (resultElement) {
+            resultElement.textContent = message;
+            resultElement.className = `alert alert-${type}`;
+            resultElement.style.display = 'block';
+
+            setTimeout(() => {
+                if (resultElement) resultElement.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    function showLoading() {
+        const loadingElement = document.getElementById('loading');
+        if (loadingElement) {
+            loadingElement.style.display = 'flex';
+        }
+    }
+
+    function hideLoading() {
+        const loadingElement = document.getElementById('loading');
+        if (loadingElement) {
+            loadingElement.style.display = 'none';
+        }
+    }
+
+    window.onload = function() {
+        const usernameInput = document.getElementById('username');
+        if (usernameInput) {
+            usernameInput.focus();
+        }
+    };
+</script>
+</body>
+</html>
