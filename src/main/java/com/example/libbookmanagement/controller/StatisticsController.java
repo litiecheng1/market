@@ -15,7 +15,6 @@ public class StatisticsController {
     @Autowired
     private StatisticsService statisticsService;
 
-    // 直接返回数据，不做任何包裹
     @GetMapping("/personal/{sno}")
     public Map<String, Object> getPersonalInfo(@PathVariable String sno) {
         System.out.println("=== 收到个人查询请求，学号：" + sno + " ===");
@@ -24,15 +23,19 @@ public class StatisticsController {
         return result;
     }
 
-    // 直接返回列表数据
     @GetMapping("/students/ranking")
     public List<Map<String, Object>> getStudentRank() {
-        return statisticsService.getMonthlyStudentRanking();
+        System.out.println("=== 收到学生排行榜请求 ===");
+        List<Map<String, Object>> result = statisticsService.getMonthlyStudentRanking();
+        System.out.println("=== 返回学生排行榜数据：" + result + " ===");
+        return result;
     }
 
-    // 直接返回列表数据
     @GetMapping("/books/ranking")
     public List<Map<String, Object>> getBookRank() {
-        return statisticsService.getMonthlyBookRanking();
+        System.out.println("=== 收到图书排行榜请求 ===");
+        List<Map<String, Object>> result = statisticsService.getMonthlyBookRanking();
+        System.out.println("=== 返回图书排行榜数据：" + result + " ===");
+        return result;
     }
 }
