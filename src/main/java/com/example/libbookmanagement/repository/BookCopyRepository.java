@@ -9,4 +9,5 @@ import java.util.List;
 public interface BookCopyRepository extends JpaRepository<BookCopy, String> {
     // 按图书ISBN查询所有副本
     List<BookCopy> findByBookISBN(String bookISBN);
+
 }

@@ -26,4 +26,5 @@ public interface BookRepository extends JpaRepository<Book, String> {
     // 按ISBN模糊查询
     @Query("SELECT b FROM Book b WHERE b.isbn LIKE CONCAT('%', :keyword, '%')")
     List<Book> findByIsbnContaining(@Param("keyword") String keyword);
+
 }

@@ -66,22 +66,46 @@ public class BookService {
     /**
      * 添加图书副本
      */
+    // BookService.java - 修复 addBookCopy 方法
     @Transactional
     public String addBookCopy(BookCopy bookCopy) {
-        // 检查图书是否存在
+        // 1. 检查条形码是否为空
+        if (bookCopy.getBarCode() == null || bookCopy.getBarCode().isEmpty()) {
+            return "添加失败：条形码不能为空";
+        }
+
+        // 2. 检查ISBN是否为空
+        if (bookCopy.getBookISBN() == null || bookCopy.getBookISBN().isEmpty()) {
+            return "添加失败：图书ISBN不能为空";
+        }
+
+        // 3. 检查图书是否存在
         if (!bookRepository.existsById(bookCopy.getBookISBN())) {
-            return "添加失败，图书不存在";
+            return "添加失败：图书不存在，ISBN: " + bookCopy.getBookISBN();
         }
-        // 检查条形码是否已存在
+
+        // 4. 检查条形码是否已存在
         if (bookCopyRepository.existsById(bookCopy.getBarCode())) {
-            return "添加失败，条形码已存在";
+            return "添加失败：条形码 " + bookCopy.getBarCode() + " 已存在";
         }
-        // 设置初始状态为"可借"
+
+        // 5. 设置默认状态
         if (bookCopy.getStatus() == null || bookCopy.getStatus().isEmpty()) {
             bookCopy.setStatus("可借");
         }
-        bookCopyRepository.save(bookCopy);
-        return "图书副本添加成功，条形码：" + bookCopy.getBarCode();
+
+        // 6. 设置默认藏书位置
+        if (bookCopy.getPlace() == null || bookCopy.getPlace().isEmpty()) {
+            bookCopy.setPlace("待分配");
+        }
+
+        try {
+            bookCopyRepository.save(bookCopy);
+            return "添加成功：条形码 " + bookCopy.getBarCode();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "添加失败：" + e.getMessage();
+        }
     }
 
     /**
@@ -158,4 +182,5 @@ public class BookService {
         bookRepository.save(existing);
         return "图书信息更新成功";
     }
+
 }
