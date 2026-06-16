@@ -5,6 +5,7 @@ import com.example.libbookmanagement.entity.BorrowRec;
 import com.example.libbookmanagement.entity.Student;
 import com.example.libbookmanagement.repository.BookRepository;
 import com.example.libbookmanagement.repository.BorrowRecRepository;
+import com.example.libbookmanagement.repository.LibCardRepository;
 import com.example.libbookmanagement.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,45 @@ public class StatisticsService {
 
     @Autowired
     private BookRepository bookRepository;
+
+    @Autowired
+    private LibCardRepository libCardRepository;
+
+    /**
+     * 获取首页统计数据
+     */
+    public Map<String, Object> getDashboardStats() {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // 馆藏图书数量
+            long totalBooks = bookRepository.count();
+            result.put("totalBooks", totalBooks);
+
+            // 注册读者数量（有借书证的学生）
+            long totalStudents = libCardRepository.count();
+            result.put("totalStudents", totalStudents);
+
+            // 今日借阅数量
+            LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
+            LocalDateTime endOfDay = startOfDay.plusDays(1);
+
+            List<BorrowRec> allRecords = borrowRecRepository.findAll();
+            long todayBorrows = allRecords.stream()
+                    .filter(rec -> rec.getBorDate() != null)
+                    .filter(rec -> rec.getBorDate().isAfter(startOfDay) && rec.getBorDate().isBefore(endOfDay))
+                    .count();
+            result.put("todayBorrows", todayBorrows);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("totalBooks", 0);
+            result.put("totalStudents", 0);
+            result.put("todayBorrows", 0);
+        }
+
+        return result;
+    }
 
     /**
      * 当月借书学生排行榜（从数据库查询真实数据）
@@ -129,6 +169,7 @@ public class StatisticsService {
      * 根据ISBN获取书名（备用）
      */
     private String getBookNameByIsbn(String isbn) {
+        if (isbn == null) return "未知图书";
         if (isbn.startsWith("978001")) return "红楼梦";
         if (isbn.startsWith("978002")) return "西游记";
         if (isbn.startsWith("978003")) return "水浒传";

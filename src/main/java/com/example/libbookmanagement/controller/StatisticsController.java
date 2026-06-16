@@ -15,6 +15,22 @@ public class StatisticsController {
     @Autowired
     private StatisticsService statisticsService;
 
+    /**
+     * 获取首页统计数据
+     * GET /api/statistics/dashboard
+     */
+    @GetMapping("/dashboard")
+    public Map<String, Object> getDashboardStats() {
+        System.out.println("=== 收到首页统计请求 ===");
+        Map<String, Object> result = statisticsService.getDashboardStats();
+        System.out.println("=== 返回统计数据：" + result + " ===");
+        return result;
+    }
+
+    /**
+     * 个人借阅情况查询
+     * GET /api/statistics/personal/{sno}
+     */
     @GetMapping("/personal/{sno}")
     public Map<String, Object> getPersonalInfo(@PathVariable String sno) {
         System.out.println("=== 收到个人查询请求，学号：" + sno + " ===");
@@ -23,6 +39,10 @@ public class StatisticsController {
         return result;
     }
 
+    /**
+     * 学生借书排行榜
+     * GET /api/statistics/students/ranking
+     */
     @GetMapping("/students/ranking")
     public List<Map<String, Object>> getStudentRank() {
         System.out.println("=== 收到学生排行榜请求 ===");
@@ -31,6 +51,10 @@ public class StatisticsController {
         return result;
     }
 
+    /**
+     * 图书借阅排行榜
+     * GET /api/statistics/books/ranking
+     */
     @GetMapping("/books/ranking")
     public List<Map<String, Object>> getBookRank() {
         System.out.println("=== 收到图书排行榜请求 ===");
