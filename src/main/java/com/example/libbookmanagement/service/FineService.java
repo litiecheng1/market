@@ -46,7 +46,7 @@ public class FineService {
             LocalDateTime now = LocalDateTime.now();
 
             if (retDate != null && retDate.isBefore(now)) {
-                long overdueDays = ChronoUnit.DAYS.between(retDate, now);
+                long overdueDays = calculateOverdueDays(rec);
                 if (overdueDays > 0) {
                     Optional<Fine> existingFine = fineRepository.findBySnoAndBarCode(rec.getSno(), rec.getBarCode());
                     if (existingFine.isPresent()) {
@@ -164,7 +164,7 @@ public class FineService {
             Fine fine = existingFine.get();
             if ("未缴纳".equals(fine.getStatus())) {
                 // 重新计算超期天数（因为时间可能继续推移）
-                long newOverdueDays = overdueDays;
+                long newOverdueDays = calculateOverdueDays(rec);
                 if (newOverdueDays > fine.getOverdueDays()) {
                     fine.setOverdueDays((int) newOverdueDays);
                     fine.setAmount(newOverdueDays * FINE_PER_DAY);
@@ -246,7 +246,95 @@ public class FineService {
     }
 
     /**
+     * 补生成所有已超期但无罚款记录的罚款
+     * 用于修复历史数据
+     * @return 生成的罚款记录数
+     */
+    @Transactional
+    public int repairMissingFines() {
+        // 查询所有"超时还"状态的借阅记录
+        List<BorrowRec> overdueRecords = borrowRecRepository.findByStatus(STATUS_RETURNED_OVERDUE);
+        int generatedCount = 0;
+
+        for (BorrowRec rec : overdueRecords) {
+            // 检查是否已有罚款记录
+            Optional<Fine> existingFine = fineRepository.findBySnoAndBarCode(
+                    rec.getSno(), rec.getBarCode()
+            );
+            if (existingFine.isPresent()) {
+                // 已有记录，检查是否需要更新超期天数
+                Fine fine = existingFine.get();
+                if ("未缴纳".equals(fine.getStatus())) {
+                    long overdueDays = calculateOverdueDays(rec);
+                    if (overdueDays > fine.getOverdueDays()) {
+                        fine.setOverdueDays((int) overdueDays);
+                        fine.setAmount(overdueDays * FINE_PER_DAY);
+                        fine.setFineDate(LocalDateTime.now());
+                        fineRepository.save(fine);
+                        generatedCount++;
+                        System.out.println("更新罚款记录：" + rec.getSno() + " - " + rec.getBarCode() +
+                                " 超期" + overdueDays + "天，罚款" + fine.getAmount() + "元");
+                    }
+                }
+                continue;
+            }
+
+            long overdueDays = calculateOverdueDays(rec);
+            if (overdueDays > 0) {
+                Fine fine = new Fine();
+                fine.setSno(rec.getSno());
+                fine.setBarCode(rec.getBarCode());
+                fine.setOverdueDays((int) overdueDays);
+                fine.setAmount(overdueDays * FINE_PER_DAY);
+                fine.setFineDate(LocalDateTime.now());
+                fine.setStatus("未缴纳");
+                fineRepository.save(fine);
+                generatedCount++;
+
+                System.out.println("补生成罚款记录：" + rec.getSno() + " - " + rec.getBarCode() +
+                        " 超期" + overdueDays + "天，罚款" + fine.getAmount() + "元");
+            }
+        }
+
+        // 也检查未归还但已超期的记录
+        List<BorrowRec> unreturnedRecords = borrowRecRepository.findByStatus(STATUS_UNRETURNED);
+        for (BorrowRec rec : unreturnedRecords) {
+            LocalDateTime retDate = rec.getRetDate();
+            LocalDateTime now = LocalDateTime.now();
+            if (retDate != null && retDate.isBefore(now)) {
+                // 检查是否已有罚款记录
+                Optional<Fine> existingFine = fineRepository.findBySnoAndBarCode(
+                        rec.getSno(), rec.getBarCode()
+                );
+                if (existingFine.isPresent()) {
+                    continue;
+                }
+
+                long overdueDays = calculateOverdueDays(rec);
+                if (overdueDays > 0) {
+                    Fine fine = new Fine();
+                    fine.setSno(rec.getSno());
+                    fine.setBarCode(rec.getBarCode());
+                    fine.setOverdueDays((int) overdueDays);
+                    fine.setAmount(overdueDays * FINE_PER_DAY);
+                    fine.setFineDate(LocalDateTime.now());
+                    fine.setStatus("未缴纳");
+                    fineRepository.save(fine);
+                    generatedCount++;
+
+                    System.out.println("补生成罚款记录（未归还）：" + rec.getSno() + " - " + rec.getBarCode() +
+                            " 超期" + overdueDays + "天，罚款" + fine.getAmount() + "元");
+                }
+            }
+        }
+
+        System.out.println("补生成罚款完成，共生成/更新 " + generatedCount + " 条记录");
+        return generatedCount;
+    }
+
+    /**
      * 计算超期天数（核心逻辑）
+     * 修改：只要超期，不足1天按1天计算
      * @return 超期天数，如果未超期则返回0
      */
     private long calculateOverdueDays(BorrowRec rec) {
@@ -259,19 +347,27 @@ public class FineService {
             return 0;
         }
 
+        long days = 0;
+
         if (STATUS_UNRETURNED.equals(rec.getStatus())) {
             // 未归还：只有当前时间超过应还日期才产生罚款
             if (now.isAfter(retDate)) {
-                return ChronoUnit.DAYS.between(retDate, now);
+                days = ChronoUnit.DAYS.between(retDate, now);
+                if (days == 0 && now.isAfter(retDate)) {
+                    days = 1; // 只要超时，至少算1天
+                }
             }
         } else if (STATUS_RETURNED_OVERDUE.equals(rec.getStatus())) {
             // 超时还：只有实际归还日期超过应还日期才产生罚款
             if (realRetDate != null && realRetDate.isAfter(retDate)) {
-                return ChronoUnit.DAYS.between(retDate, realRetDate);
+                days = ChronoUnit.DAYS.between(retDate, realRetDate);
+                if (days == 0 && realRetDate.isAfter(retDate)) {
+                    days = 1; // 只要超时，至少算1天
+                }
             }
         }
         // 按时还或其他情况：不产生罚款
-        return 0;
+        return days;
     }
 
     /**
